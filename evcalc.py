@@ -7,20 +7,20 @@ import re
 # TODO: to fix, we need to expand some of the denominators but it probably will cook the computing so this is good enough I think
 
 # declaring global dicts and lists (for card management)
-card_index = {
-    'A': 0,
-    '2': 1,
-    '3': 2,
-    '4': 3,
-    '5': 4,
-    '6': 5,
-    '7': 6,
-    '8': 7,
-    '9': 8,
-    'T': 9,
-    'J': 10,
-    'Q': 11,
-    'K': 12
+card_nums = {
+    'A': 1,
+    '2': 2,
+    '3': 3,
+    '4': 4,
+    '5': 5,
+    '6': 6,
+    '7': 7,
+    '8': 8,
+    '9': 9,
+    'T': 10,
+    'J': 11,
+    'Q': 12,
+    'K': 13
 }
 
 cards = {
@@ -74,7 +74,7 @@ def calc_ev(hand: list[str], board: list[str], known_hands=None):
     Inputs:
     hand: current hand
     board: current board
-    known_hands: any known cards that are in other player's hands
+    known_hands: any known cards that are in other player's hands (might not be applicable)
 
     Outputs:
     EV of each hand?
@@ -86,11 +86,18 @@ def calc_ev(hand: list[str], board: list[str], known_hands=None):
 
     # create array of currently known cards
     current_cards = hand + board
-
     test = ['As', 'Kd', 'Qd', 'Jd', 'Td']
+
+    # make 2 different arrays, one that is easier to figure for flushes, the other for the rest
     current_cards_str = ' '.join(test)
-    
+    current_cards_num = []
+    for card in test:
+        current_cards_num.append(card[1] + str(card_nums[card[0]]))
+
+    # find probability of royal flush    
     royalflush_pr = calc_royalflush(current_cards_str, len(test))
+
+    print(current_cards_num)
 
     #TODO: add the pr calculations into their separate functions
     # straight flush: 5 straight combinations in the same suit (higher wins)
