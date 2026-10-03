@@ -5,7 +5,7 @@ from macpoker import Bot
 
 class Tikitesty(Bot):
     def log(self, hook_name, payload):
-        with open("hook_debug.txt", "a", encoding="utf-8") as log_file:
+        with open("all_in.txt", "a", encoding="utf-8") as log_file:
             log_file.write(f"\n--- {hook_name} ---\n")
             log_file.write(pformat(payload, sort_dicts=False) + "\n")
 
