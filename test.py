@@ -1,8 +1,9 @@
 from pprint import pformat
 from macpoker import Bot
 
+# RUN THIS: macpoker play test.py house:random --deals 
 
-class ProbeBot(Bot):
+class Tikitesty(Bot):
     def log(self, hook_name, payload):
         with open("hook_debug.txt", "a", encoding="utf-8") as log_file:
             log_file.write(f"\n--- {hook_name} ---\n")
