@@ -5,7 +5,7 @@ ACTIONS = {"fold", "check", "call", "raise"}
 RECENT_ACTION_WEIGHT = 0.7
 HISTORY_ADJUSTMENT = 0.15
 
-# Checking is weak evidence, calling moderate evidence, raising strong evidence
+# Checking is weak, calling moderate and raising strong
 BASE_CONFIDENCE = {"check": 0.25, "call": 0.45, "raise": 0.65}
 AGGRESSION = {"fold": 0.0, "check": 0.0, "call": 0.5, "raise": 1.0}
 
@@ -17,12 +17,10 @@ class SocialBehaviour:
         self.social_thresh = social_thresh
         self.my_id = None
 
-        # Each key is (player ID, street), e.g. (1, "flop"). Counts survive
-        # hand changes so preflop behaviour is compared with preflop history.
+        # Each key is (player ID, street), e.g. (1, "flop").
         self.history = defaultdict(Counter)
 
-        # Only opponents still in this hand appear here. Each has one score:
-        # {player_id: {"last_action": None, "confidence": 0.5}}
+        # Formatted liek {player_id: {"last_action": None, "confidence": 0.5}}
         self.current = {}
         self._starting_chips = {}
 
@@ -39,8 +37,8 @@ class SocialBehaviour:
     def on_action(self, event):
         if self.my_id is None:
             return
-
-        # A seat is a position, not a permanent player ID.
+        
+        # Gets the playerid from seat
         who = event["players"][event["seat"]]
         if who not in self.current:
             return 
@@ -96,10 +94,8 @@ class SocialBehaviour:
         }
 
     def get_table_confidence(self):
-        """Return the highest active opponent score; 0 if none remain.
-
-        This answers: how confident does the strongest-looking opponent seem?
-        It is not the average opponent score or a probability someone wins.
+        """
+        Return the highest active opponent score
         """
         return max(
             (current["confidence"] for current in self.current.values()),
