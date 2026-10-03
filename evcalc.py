@@ -24,6 +24,22 @@ card_nums = {
     'K': 13
 }
 
+card_ratings = {
+    'A': 13,
+    '2': 1,
+    '3': 2,
+    '4': 3,
+    '5': 4,
+    '6': 5,
+    '7': 6,
+    '8': 7,
+    '9': 8,
+    'T': 9,
+    'J': 10,
+    'Q': 11,
+    'K': 12
+}
+
 cards = {
     's': [1,2,3,4,5,6,7,8,9,10,11,12,13],
     'h': [1,2,3,4,5,6,7,8,9,10,11,12,13],
@@ -265,6 +281,8 @@ def calc_fullhouse(current_cards_str, numCards):
     return pr_1+pr_2, ranks
 
 def calc_flush(current_cards_num, numCards):
+    # flush: 5 of the same house (higher wins)
+
     current_cards_num = sorted(current_cards_num, key=natural_sort_key)
     current_cards_num = ' '.join(current_cards_num)
     current_largest = 0
@@ -277,7 +295,18 @@ def calc_flush(current_cards_num, numCards):
         search = f'({suite}[0-9]+)'
         match = re.findall(search, current_cards_num)
 
-        if len(match) > current_largest:
+        if len(match) == 5:
+            strength = 0
+            for card in match:
+                number = int(card[1:])
+
+                if number == 1:
+                    strength += 13
+                else:
+                    strength += (number - 1)
+
+            return 1, strength
+        elif len(match) > current_largest:
             current_largest = len(match)
 
             # figure out strength of current hand
@@ -297,7 +326,182 @@ def calc_flush(current_cards_num, numCards):
             else:
                 pr_flush = ((13-len(match))/numCardsLeft)**(5 - len(match)) * nPr(drawsLeft, 5-len(match))
 
+    pr_flush *= (1 - ((4*(13-len(match)))/52))
+
     return pr_flush, strength
+
+def calc_straight(current_cards_num, numCards):
+    # straight: 5 consecutive cards (any suit) (higher wins)
+    current_cards_num = sorted(current_cards_num, key=natural_sort_key)
+
+    number_list = []
+
+    for card in current_cards_num:
+        number_list.append(int(card[1:]))
+
+    number_list = np.array(number_list)
+
+    number_list = np.unique(number_list)
+
+    consequtive = 1
+    highest_consequtive = 0
+    rank = 0
+    value = None
+    
+    for i in number_list:
+        if value == None:
+            value = i
+        else:
+            if i == value + 1:
+                consequtive += 1
+                value = i
+            else:
+                consequtive = 1
+
+        if highest_consequtive < consequtive:
+            highest_consequtive = consequtive
+            rank = i
+
+    numCardsLeft = 52 - numCards - 4*2
+    drawsLeft = 5 - (numCards - 2)
+
+    if 1 not in current_cards_num and 13 not in current_cards_num:
+        pr_straight = (2*4/numCardsLeft)**(5 - highest_consequtive) * nPr(drawsLeft, 5-highest_consequtive)
+    else:
+        pr_straight = (4/numCardsLeft)**(5 - highest_consequtive) * nPr(drawsLeft, 5-highest_consequtive)
+
+    # adjust in case someone was dealt the cards needed
+    pr_straight *= (1 - ((4*2/52)))
+
+    return pr_straight, rank
+
+def calc_threeok(current_cards_str, numCards):
+    # three of a kind: 3 of the same number (higher wins)
+    
+    highest = 0
+    highest_rank = ''
+
+    for rank in card_nums.keys():
+        search = f'({rank}[shdc])'
+        match = re.findall(search, current_cards_str)
+
+        if len(match) > highest:
+            highest = len(match)
+            highest_rank = rank
+        elif len(match) == highest:
+            highest_rank += rank
+    
+    # finding probability
+    numCardsLeft = 52 - numCards - 4*2
+    drawsLeft = 5 - (numCards - 2)
+
+    # if we have the three of a kind already
+    if highest >= 3:
+        return 1, highest_rank
+    else:
+        # if the number of cards to be revealed is lower than the amount of cards needed to form the hand
+        if drawsLeft < 3 - highest:
+            return 0, None
+        else:
+            # actually calculating it
+            pr_threeok_dry = (1/numCardsLeft)**(3-highest) * len(highest_rank) * nPr(drawsLeft,3-highest)
+
+            # account for the case where someone else already has it
+            pr_threeok = pr_threeok_dry * (1 - ((4*len(highest_rank))/52))
+
+            weight = 0
+            if len(highest_rank) == 1:
+                weight = highest_rank
+            else:
+                for rank in highest_rank:
+                    if card_nums[rank] == '1':
+                        weight = 13
+                        break
+                    elif card_nums[rank] > weight:
+                        weight = card_nums[rank]
+
+            return pr_threeok, weight
+
+def calc_twopair(current_cards_str, numCards):
+    # two pair: 2 of the same number x2 (higher wins)
+    highest = 0
+    highest_rank = ''
+
+    for rank in card_nums.keys():
+        search = f'({rank}[shdc])'
+        match = re.findall(search, current_cards_str)
+
+        if len(match) > highest:
+            highest = len(match)
+            highest_rank = rank
+        elif len(match) == highest:
+            highest_rank += rank
+    
+    # finding probability
+    numCardsLeft = 52 - numCards - 4*2
+    drawsLeft = 5 - (numCards - 2)
+
+    if len(highest_rank) == 2 and highest == 2:
+        return 1, highest_rank
+    else:
+        # actually calculating it
+        pr_twopair_dry = (1/numCardsLeft)**(2-highest) * len(highest_rank) * nPr(drawsLeft,2-highest)
+
+        # account for the case where someone else already has it
+        pr_twopair = pr_twopair_dry * (1 - ((4*len(highest_rank))/52))
+
+        # need this to happen for 2 different pairs
+        pr_twopair = pr_twopair**2
+
+    return pr_twopair, highest_rank
+
+def calc_onepair(current_cards_str, numCards):
+    # two pair: 2 of the same number x2 (higher wins)
+    strongest_rank = 0
+    highest = 0
+    highest_rank = ''
+
+    for rank in card_nums.keys():
+        search = f'({rank}[shdc])'
+        match = re.findall(search, current_cards_str)
+
+        for card in match:
+            if card_ratings[card[0]] > strongest_rank:
+                strongest_rank = card_ratings[card[0]]
+
+        if len(match) > highest:
+            highest = len(match)
+            highest_rank = rank
+        elif len(match) == highest:
+            highest_rank += rank
+    
+    # finding probability
+    numCardsLeft = 52 - numCards - 4*2
+    drawsLeft = 5 - (numCards - 2)
+
+    if len(highest_rank) == 2 and strongest_rank in highest_rank:
+        return 1, highest_rank
+    else:
+        # actually calculating it
+        pr_onepair_dry = (1/numCardsLeft)*5*drawsLeft
+
+        # account for the case where someone else already has it
+        pr_onepair = pr_onepair_dry * (1 - (4/52))
+
+    return pr_onepair, strongest_rank
+
+def calc_highcard(current_cards_str, numCards):
+    strongest_rank = 0
+
+    for rank in card_nums.keys():
+        search = f'({rank}[shdc])'
+        match = re.findall(search, current_cards_str)
+
+        for card in match:
+            if card_ratings[card[0]] > strongest_rank:
+                strongest_rank = card_ratings[card[0]]
+
+    return strongest_rank
 
 def calc_ev(hand: list[str], board: list[str], known_hands=None):
     """
@@ -316,7 +520,7 @@ def calc_ev(hand: list[str], board: list[str], known_hands=None):
 
     # create array of currently known cards
     current_cards = hand + board
-    test = np.array(['3d', 'Ah', '3h', 'Ac', 'Qh'])
+    test = np.array(['3c', '4c', '7c', 'Ac', 'Tc'])
 
     # make 2 different arrays, one that is easier to figure for flushes, the other for the rest
     current_cards_str = ' '.join(test)
@@ -328,20 +532,13 @@ def calc_ev(hand: list[str], board: list[str], known_hands=None):
     straightflush_pr, highest_sf = calc_straightflush(current_cards_num, len(test))
     fourok_pr, highest_four = calc_fourok(current_cards_str, len(test))
     fullhouse_pr, ranks_fh = calc_fullhouse(current_cards_str, len(test))
-    flush_pr, strength = calc_flush(current_cards_num, len(test))
+    flush_pr, strength_flush = calc_flush(current_cards_num, len(test))
+    straight_pr, highest_straight = calc_straight(current_cards_num, len(test))
+    threeok_pr, highest_three = calc_threeok(current_cards_str, len(test))
+    twopair_pr, highest_tp = calc_twopair(current_cards_str, len(test))
+    onepair_pr, strength_onepair = calc_onepair(current_cards_str, len(test))
+    strength_hc = calc_highcard(current_cards_str, len(test))
 
-    print(royalflush_pr)
-    print(straightflush_pr)
-    print(fourok_pr)
-    print(fullhouse_pr)
-    print(flush_pr)
-
-    #TODO: add the pr calculations into their separate functions
-    # flush: 5 of the same house (higher wins)
-    # straight: 5 consecutive cards (any suit) (higher wins)
-    # three of a kind: 3 of the same number (higher wins)
-    # two pair: 2 of the same number x2 (higher wins)
-    # one pair: 2 of the same number x1 (higher wins)
-    # high card: highest card in hand
+    
 
 calc_ev(['a'], ['aaaa'])
