@@ -1,79 +1,104 @@
-from macpoker import Bot
-from collections import defaultdict, Counter
+from collections import Counter, defaultdict
 
-# -- // SOCIAL BEHAVIOUR STUFF // --
-SOCIAL_THRESH = 10 # How many actions to gather before making decisions based on other bots
+SOCIAL_THRESH = 10  # Needs this many past actions before considering
+ACTIONS = {"fold", "check", "call", "raise"}
+RECENT_ACTION_WEIGHT = 0.7
+HISTORY_ADJUSTMENT = 0.15
 
-ACTIONS = {"fold", "check", "call", "bet", "raise", "all_in"} # Set of all actions
-AGGRESSIVE = {"bet", "raise", "all_in"} # Set of aggressive actions
+# Checking is weak, calling moderate and raising strong
+BASE_CONFIDENCE = {"check": 0.25, "call": 0.45, "raise": 0.65}
+AGGRESSION = {"fold": 0.0, "check": 0.0, "call": 0.5, "raise": 1.0}
 
 class SocialBehaviour:
     def __init__(self, social_thresh=SOCIAL_THRESH):
-        self.my_id = None
+        if social_thresh < 1:
+            raise ValueError("Social thresh needs to be at least 1 monkey")
+
         self.social_thresh = social_thresh
-        self.logs = defaultdict(Counter) # Will store "bot1": Counter({"fold": 2, "raise": 1}) for example
-        self.bots_still_in = set() # All the bots still in the game
-        self.current = {} # Will store each bots last action and penalty
+        self.my_id = None
+
+        # Each key is (player ID, street), e.g. (1, "flop").
+        self.history = defaultdict(Counter)
+
+        # Formatted liek {player_id: {"last_action": None, "confidence": 0.5}}
+        self.current = {}
+        self._starting_chips = {}
 
     def on_hand_start(self, info):
-        self.my_id = info["players"][info["seat"]]
-        self.bots_still_in = set(info["players"]) - {self.my_id}
+        players = info["players"]
+        self.my_id = players[info["seat"]]
+        self._starting_chips = dict(zip(players, info["stacks"]))
         self.current = {
-            bot_id: {"last_action": None, "penalty": 0.0} # Gauge their penalty based on their past behaviour
-            for bot_id in self.bots_still_in
+            player: {"last_action": None, "confidence": 0.5}
+            for player in players
+            if player != self.my_id
         }
 
     def on_action(self, event):
-        who = event["players"][event["seat"]]
-        action = event["action"] # Current action taken
-
-        if who == self.my_id:
+        if self.my_id is None:
             return
-
-        counts = self.logs[who]
-        total = sum(counts.values())
-
-        penalty = 0.0 # How uncharacteristic it is for them to act aggressively
-
-        if total >= self.social_thresh and action in AGGRESSIVE:
-            fold_rate = counts["fold"] / total
-
-            aggressive_count = sum(counts[a] for a in AGGRESSIVE) # SUm of aggressive actions taken
-            aggression_rate = aggressive_count / total # Noramlisation
-
-            action_weight = { # TODO: Arbitrary rn, refine with testing
-                "bet": 0.3,
-                "raise": 0.5,
-                "all_in": 0.8
-            }[action]
-
-            penalty = action_weight * (0.5 * fold_rate + 0.5 * (1 - aggression_rate))
-
-        previous_penalty = self.current[who]["penalty"]
         
-        self.current[who]["last_action"] = action
-        self.current[who]["penalty"] = max(previous_penalty, penalty)
+        # Gets the playerid from seat
+        who = event["players"][event["seat"]]
+        if who not in self.current:
+            return 
 
-        counts[action] += 1
+        action = event["action"]
+        if action not in ACTIONS:
+            return  # Unrecognised action, proly wont happen
+
+        counts = self.history[(who, event["street"])]
 
         if action == "fold":
-            self.bots_still_in.discard(who)
-            self.current[who]["penalty"] = 0.0
+            counts[action] += 1
+            del self.current[who] # Remove them
+            return
 
-    def get_total_penalty(self):
+        confidence = BASE_CONFIDENCE[action]
+
+        if action in {"call", "raise"}:
+            amount = max(0, event["amount"]) # Considers amount
+            pot_fraction = min(1.0, amount / max(event["pot"], 1))
+            chips_fraction = min(1.0, amount / max(self._starting_chips[who], 1))
+            pot_weight = 0.20 if action == "raise" else 0.10
+            confidence += pot_weight * pot_fraction + 0.15 * chips_fraction
+
+        total = sum(counts.values())
+        if total >= self.social_thresh:
+            usual_aggression = sum(
+                AGGRESSION[previous_action] * count
+                for previous_action, count in counts.items()
+            ) / total
+
+            # If theyre usually passive but they make aggressive play it adds and if theyre usually aggressive but theyre suddenly passive
+            confidence += HISTORY_ADJUSTMENT * (
+                AGGRESSION[action] - usual_aggression
+            )
+
+        confidence = max(0.0, min(1.0, confidence))
+        current = self.current[who]
+        if current["last_action"] is not None:
+            confidence = (RECENT_ACTION_WEIGHT * confidence + (1 - RECENT_ACTION_WEIGHT) * current["confidence"])
+
+        current["last_action"] = action
+        current["confidence"] = confidence
+        counts[action] += 1  # Add this action AFTER comparing it with history.
+
+    def get_opponent_confidences(self):
         """
-        returns total penalty (how confident opponents are)
+        Can call this from main btw if need be, does exactly what it says
         """
-        
-        penalties = [
-            self.current[bot_id]["penalty"]
-            for bot_id in self.bots_still_in
-        ]
+        return {
+            player: current["confidence"]
+            for player, current in self.current.items()
+        }
 
-        if not penalties:
-            return 0.0
+    def get_table_confidence(self):
+        """
+        Return the highest active opponent score
+        """
+        return max(
+            (current["confidence"] for current in self.current.values()),
+            default=0.0,
+        )
 
-        strongest = max(penalties)
-        others = sum(penalties) - strongest
-
-        return min(1.0, strongest + 0.25 * others) # Full penalty from strongest and a bit from others
