@@ -1,6 +1,5 @@
 from macpoker import Bot
 from collections import defaultdict, Counter
-from math import isfinite
 
 class MyBot(Bot):
     def act(self, state):
