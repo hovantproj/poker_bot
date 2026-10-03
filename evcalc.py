@@ -604,5 +604,4 @@ def calc_ev(hand: list[str], board: list[str], known_hands=None):
 
     return ev
 
-
-calc_ev(['Qh', 'Qd'], ['Qc', 'Ac', 'Tc'])
+# calc_ev(['Qh', 'Qd'], ['Qc', 'Ac', 'Tc'])

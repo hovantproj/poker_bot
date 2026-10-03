@@ -1,6 +1,8 @@
-Kento: making ev calculations
-- will return expected value of each action at a given moment
-- uses the board and hand as consideration
+Kento: evcalc.py
+- use the function calc_ev(hand, board)
+- hand, board must be in the form ['Ac', '1d'], ['Qh', 'Ts', '4c'] etc
+- The calc_ev function will output a numpy array of the expected values (probability * hand strength) for each type of hand
+- index 0 is for royal flush and last index is for high card 
 
 Philo: making main.py 
 - determines optimal action using ev and player behaviour stuff
