@@ -516,11 +516,22 @@ def calc_highcard(current_cards_str, numCards):
         for card in match:
             if card_ratings[card[0]] > strongest_rank:
                 strongest_rank = card_ratings[card[0]]
-
+                
     return strongest_rank
 
 def find_strength(ranks):
     highest_strength = 0
+
+    if ranks == 10:
+        ranks = 'T'
+    elif ranks == 11:
+        ranks = 'J'
+    elif ranks == 12:
+        ranks = 'Q'
+    elif ranks == 1:
+        ranks = 'A'
+    else:
+        ranks = 'K'
     ranks = str(ranks)
 
     for rank in ranks:
@@ -602,6 +613,8 @@ def calc_ev(hand: list[str], board: list[str], known_hands=None):
     # EV calculations
     ev = probabilities*strengths
 
+    probabilities_norm = probabilities/np.sum(probabilities)
+    
     return ev
 
-# calc_ev(['Qh', 'Qd'], ['Qc', 'Ac', 'Tc'])
+# calc_ev(['Jh', 'Qd'], ['Qd', 'Qc', 'Tc'])
