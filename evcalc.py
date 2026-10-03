@@ -206,7 +206,6 @@ def calc_fourok(current_cards_str, numCards):
 
 def calc_fullhouse(current_cards_str, numCards):
     # full house: 3 of the same rank and 2 of the same rank (higher wins)
-    print(current_cards_str)
     
     highest = 0
     highest_rank = ''
@@ -244,20 +243,61 @@ def calc_fullhouse(current_cards_str, numCards):
     if highest == 3:
         pr_highest3 = 1
     else:
-        pr_highest3 = (1/(52 - numCardsLeft))**(3 - highest) * len(highest_rank) * nPr(drawsLeft, 3-highest)
+        pr_highest3 = (1/numCardsLeft)**(3 - highest) * len(highest_rank) * nPr(drawsLeft, 3-highest)
 
-    pr_second2 = (1/(52 - numCardsLeft))**(2 - second_highest) * len(second_highest_rank) * nPr(drawsLeft, 2-second_highest)
+    pr_second2 = (1/numCardsLeft)**(2 - second_highest) * len(second_highest_rank) * nPr(drawsLeft, 2-second_highest)
     pr_1 = pr_highest3*pr_second2
+    
     # case 2: highest reaches (or stays) 2, second reaches 3
-    if highest == 2:
+    if highest >= 2:
         pr_highest2 = 1
     else:
-        pr_highest2 = (1/(52 - numCardsLeft))**(2 - highest) * len(highest_rank) * nPr(drawsLeft, 2-highest)
+        pr_highest2 = (1/(numCardsLeft))**(2 - highest) * len(highest_rank) * nPr(drawsLeft, 2-highest)
 
-    pr_second3 = (1/(52 - numCardsLeft))**(3 - second_highest) * len(second_highest_rank) * nPr(drawsLeft, 3-second_highest)
+    pr_second3 = (1/(numCardsLeft))**(3 - second_highest) * len(second_highest_rank) * nPr(drawsLeft, 3-second_highest)
     pr_2 = pr_highest2*pr_second3
 
+    if len(highest_rank) == 2:
+        ranks = highest_rank
+    else:
+        ranks = highest_rank + second_highest_rank[0]
+
     return pr_1+pr_2, ranks
+
+def calc_flush(current_cards_num, numCards):
+    current_cards_num = sorted(current_cards_num, key=natural_sort_key)
+    current_cards_num = ' '.join(current_cards_num)
+    current_largest = 0
+    numCardsLeft = 52 - numCards - 4*2
+    drawsLeft = 5 - (numCards - 2)
+
+    pr_flush = 0
+    
+    for suite in suites:
+        search = f'({suite}[0-9]+)'
+        match = re.findall(search, current_cards_num)
+
+        if len(match) > current_largest:
+            current_largest = len(match)
+
+            # figure out strength of current hand
+            strength = 0
+            for card in match:
+                number = int(card[1:])
+
+                if number == 1:
+                    strength += 13
+                else:
+                    strength += (number - 1)
+
+            # figure out probability
+            if drawsLeft < 5-len(match):
+                # not enough draws to get a flush
+                pass
+            else:
+                pr_flush = ((13-len(match))/numCardsLeft)**(5 - len(match)) * nPr(drawsLeft, 5-len(match))
+
+    return pr_flush, strength
 
 def calc_ev(hand: list[str], board: list[str], known_hands=None):
     """
@@ -276,7 +316,7 @@ def calc_ev(hand: list[str], board: list[str], known_hands=None):
 
     # create array of currently known cards
     current_cards = hand + board
-    test = np.array(['3d', '3c', '3h', 'Ac', 'Qh'])
+    test = np.array(['3d', 'Ah', '3h', 'Ac', 'Qh'])
 
     # make 2 different arrays, one that is easier to figure for flushes, the other for the rest
     current_cards_str = ' '.join(test)
@@ -287,7 +327,14 @@ def calc_ev(hand: list[str], board: list[str], known_hands=None):
     royalflush_pr = calc_royalflush(current_cards_str, len(test))
     straightflush_pr, highest_sf = calc_straightflush(current_cards_num, len(test))
     fourok_pr, highest_four = calc_fourok(current_cards_str, len(test))
-    calc_fullhouse(current_cards_str, len(test))
+    fullhouse_pr, ranks_fh = calc_fullhouse(current_cards_str, len(test))
+    flush_pr, strength = calc_flush(current_cards_num, len(test))
+
+    print(royalflush_pr)
+    print(straightflush_pr)
+    print(fourok_pr)
+    print(fullhouse_pr)
+    print(flush_pr)
 
     #TODO: add the pr calculations into their separate functions
     # flush: 5 of the same house (higher wins)
