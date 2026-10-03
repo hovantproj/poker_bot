@@ -539,6 +539,5 @@ def calc_ev(hand: list[str], board: list[str], known_hands=None):
     onepair_pr, strength_onepair = calc_onepair(current_cards_str, len(test))
     strength_hc = calc_highcard(current_cards_str, len(test))
 
-    
 
-calc_ev(['a'], ['aaaa'])
+    
