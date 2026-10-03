@@ -47,6 +47,19 @@ cards = {
     'c': [1,2,3,4,5,6,7,8,9,10,11,12,13]
 }
 
+hands = {
+    'royal flush' : 0,
+    'straight flush"' : 1,
+    'four of a kind' : 2,
+    'full house' : 3,
+    'flush' : 4,
+    'straight' : 5,
+    'three of a kind' : 6,
+    'two pair' : 7,
+    'one pair' : 8,
+    'high card' : 9
+}
+
 suites = ['s', 'h', 'd', 'c']
 
 # defining useful functions
@@ -59,7 +72,7 @@ def natural_sort_key(s):
 def calc_royalflush(current_cards_str, numCards):
     # royal flush: A-K-Q-J-T in the same suit 
     # check for each suite, if there's one close then yeah
-    highest_suit = None
+    highest_suit = 0
     count = 0
     highest_count = 0
 
@@ -69,7 +82,7 @@ def calc_royalflush(current_cards_str, numCards):
         count = len(x)
 
         if count > 0:
-            if highest_suit == None:
+            if highest_suit == 0:
                 highest_suit = suite
                 highest_count = count
             elif count == highest_count:
@@ -106,7 +119,7 @@ def calc_straightflush(current_cards_num, numCards):
     current_cards_num = sorted(current_cards_num, key=natural_sort_key)
 
     # look to find longest consecutive line of the same suit
-    current_suit = None
+    current_suit = 0
     current_rank = 0
     current_length = 0
     longest = 0
@@ -116,7 +129,7 @@ def calc_straightflush(current_cards_num, numCards):
 
     for card in current_cards_num:
         # case for first card in the list
-        if current_suit == None:
+        if current_suit == 0:
             current_suit = card[0]
             current_rank = int(card[1:])
             current_length += 1
@@ -160,7 +173,7 @@ def calc_straightflush(current_cards_num, numCards):
     else:
         # if the number of cards to be revealed is lower than the amount of cards needed to form the hand 
         if drawsLeft < 5 - longest:
-            return 0, None
+            return 0, 0
         else:
             # actually calculating it
             pr_straightflush_dry = (1/numCardsLeft)**(5-longest) * len(longest_suit) * nPr(drawsLeft,5-longest)
@@ -202,7 +215,7 @@ def calc_fourok(current_cards_str, numCards):
     else:
         # if the number of cards to be revealed is lower than the amount of cards needed to form the hand
         if drawsLeft < 4 - highest:
-            return 0, None
+            return 0, 0
         else:
             # actually calculating it
             pr_fourok_dry = (1/numCardsLeft)**(4-highest) * len(highest_rank) * nPr(drawsLeft,4-highest)
@@ -256,7 +269,7 @@ def calc_fullhouse(current_cards_str, numCards):
     drawsLeft = 5 - (numCards - 2)
     
     # case 1: highest reaches 3, second reaches 2
-    if highest == 3:
+    if highest >= 3:
         pr_highest3 = 1
     else:
         pr_highest3 = (1/numCardsLeft)**(3 - highest) * len(highest_rank) * nPr(drawsLeft, 3-highest)
@@ -288,6 +301,7 @@ def calc_flush(current_cards_num, numCards):
     current_largest = 0
     numCardsLeft = 52 - numCards - 4*2
     drawsLeft = 5 - (numCards - 2)
+    strength_final = 0
 
     pr_flush = 0
     
@@ -301,11 +315,14 @@ def calc_flush(current_cards_num, numCards):
                 number = int(card[1:])
 
                 if number == 1:
-                    strength += 13
+                    strength == 13
                 else:
-                    strength += (number - 1)
+                    strength == (number - 1)
 
-            return 1, strength
+                if strength > strength_final:
+                    strength_final = strength
+
+            return 1, strength_final
         elif len(match) > current_largest:
             current_largest = len(match)
 
@@ -358,7 +375,7 @@ def calc_straight(current_cards_num, numCards):
             else:
                 consequtive = 1
 
-        if highest_consequtive < consequtive:
+        if highest_consequtive <= consequtive:
             highest_consequtive = consequtive
             rank = i
 
@@ -401,7 +418,7 @@ def calc_threeok(current_cards_str, numCards):
     else:
         # if the number of cards to be revealed is lower than the amount of cards needed to form the hand
         if drawsLeft < 3 - highest:
-            return 0, None
+            return 0, 0
         else:
             # actually calculating it
             pr_threeok_dry = (1/numCardsLeft)**(3-highest) * len(highest_rank) * nPr(drawsLeft,3-highest)
@@ -441,11 +458,11 @@ def calc_twopair(current_cards_str, numCards):
     numCardsLeft = 52 - numCards - 4*2
     drawsLeft = 5 - (numCards - 2)
 
-    if len(highest_rank) == 2 and highest == 2:
+    if (len(highest_rank) == 2 and highest == 2):
         return 1, highest_rank
     else:
         # actually calculating it
-        pr_twopair_dry = (1/numCardsLeft)**(2-highest) * len(highest_rank) * nPr(drawsLeft,2-highest)
+        pr_twopair_dry = (1/numCardsLeft)
 
         # account for the case where someone else already has it
         pr_twopair = pr_twopair_dry * (1 - ((4*len(highest_rank))/52))
@@ -503,6 +520,17 @@ def calc_highcard(current_cards_str, numCards):
 
     return strongest_rank
 
+def find_strength(ranks):
+    highest_strength = 0
+    ranks = str(ranks)
+
+    for rank in ranks:
+        strength = card_ratings[rank]
+        if strength > highest_strength:
+            highest_strength = strength
+
+    return highest_strength
+
 def calc_ev(hand: list[str], board: list[str], known_hands=None):
     """
     Inputs:
@@ -520,25 +548,61 @@ def calc_ev(hand: list[str], board: list[str], known_hands=None):
 
     # create array of currently known cards
     current_cards = hand + board
-    test = np.array(['3c', '4c', '7c', 'Ac', 'Tc'])
+    current_cards = np.array(current_cards)
+    length = len(current_cards)
 
     # make 2 different arrays, one that is easier to figure for flushes, the other for the rest
-    current_cards_str = ' '.join(test)
+    current_cards_str = ' '.join(current_cards)
     current_cards_num = []
-    for card in test:
+    for card in current_cards:
         current_cards_num.append(card[1] + str(card_nums[card[0]]))
 
-    royalflush_pr = calc_royalflush(current_cards_str, len(test))
-    straightflush_pr, highest_sf = calc_straightflush(current_cards_num, len(test))
-    fourok_pr, highest_four = calc_fourok(current_cards_str, len(test))
-    fullhouse_pr, ranks_fh = calc_fullhouse(current_cards_str, len(test))
-    flush_pr, strength_flush = calc_flush(current_cards_num, len(test))
-    straight_pr, highest_straight = calc_straight(current_cards_num, len(test))
-    threeok_pr, highest_three = calc_threeok(current_cards_str, len(test))
-    twopair_pr, highest_tp = calc_twopair(current_cards_str, len(test))
-    onepair_pr, strength_onepair = calc_onepair(current_cards_str, len(test))
-    strength_hc = calc_highcard(current_cards_str, len(test))
+    royalflush_pr = calc_royalflush(current_cards_str, length)
 
-    
+    straightflush_pr, highest_sf = calc_straightflush(current_cards_num, length)
+    if highest_sf == 1:
+        strength_sf = 13
+    elif highest_sf != 0:
+        strength_sf = highest_sf - 1
+    else:
+        strength_sf = highest_sf
 
-calc_ev(['a'], ['aaaa'])
+    fourok_pr, highest_four = calc_fourok(current_cards_str, length)
+    if highest_four != 0:
+        strength_fourok = card_ratings[str(highest_four)]
+    else:
+        strength_fourok = highest_four
+
+    fullhouse_pr, ranks_fh = calc_fullhouse(current_cards_str, length)
+    strength_fh = find_strength(ranks_fh)
+
+    flush_pr, strength_flush = calc_flush(current_cards_num, length)
+
+    straight_pr, highest_straight = calc_straight(current_cards_num, length)
+    if highest_straight != 0:
+        strength_straight = highest_straight - 1
+    else:
+        strength_straight = highest_straight
+
+    threeok_pr, highest_three = calc_threeok(current_cards_str, length)
+    strength_threeok = find_strength(highest_three)
+
+    twopair_pr, highest_tp = calc_twopair(current_cards_str, length)
+    strength_tp = find_strength(highest_tp)
+
+    onepair_pr, highest_op = calc_onepair(current_cards_str, length)
+    strength_op = highest_op
+
+    strength_hc = calc_highcard(current_cards_str, length)
+
+    # 'strength' is quantified as the highest rank in the hand if it's made
+    probabilities = np.array([royalflush_pr, straightflush_pr, fourok_pr, fullhouse_pr, flush_pr, straight_pr, threeok_pr, twopair_pr, onepair_pr, 1])
+    # royal flush strength is infinite so giving it an arbitrary big number
+    strengths = np.array([100, strength_sf, strength_fourok, strength_fh, strength_flush, strength_straight, strength_threeok, strength_tp, strength_op, strength_hc])
+    # EV calculations
+    ev = probabilities*strengths
+
+    return ev
+
+
+calc_ev(['Qh', 'Qd'], ['Qc', 'Ac', 'Tc'])
