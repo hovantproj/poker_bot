@@ -2,8 +2,8 @@ from collections import Counter, defaultdict
 
 SOCIAL_THRESH = 10  # Needs this many past actions before considering
 ACTIONS = {"fold", "check", "call", "raise"}
-RECENT_ACTION_WEIGHT = 0.7
-HISTORY_ADJUSTMENT = 0.15
+RECENT_ACTION_WEIGHT = 0.7 # What percentage of decision should be based on most recent action, other percentage is based on accumulation of previous actions
+HISTORY_ADJUSTMENT = 0.15 # How much it reacts to new unusual actions
 
 # Checking is weak, calling moderate and raising strong
 BASE_CONFIDENCE = {"check": 0.25, "call": 0.45, "raise": 0.65}
@@ -27,7 +27,7 @@ class SocialBehaviour:
     def on_hand_start(self, info):
         players = info["players"]
         self.my_id = players[info["seat"]]
-        self._starting_chips = dict(zip(players, info["stacks"]))
+        self._starting_chips = dict(zip(players, info["stacks"])) # Stacks are [200, 200] for example idk why they call it that
         self.current = {
             player: {"last_action": None, "confidence": 0.5}
             for player in players
@@ -65,15 +65,10 @@ class SocialBehaviour:
 
         total = sum(counts.values())
         if total >= self.social_thresh:
-            usual_aggression = sum(
-                AGGRESSION[previous_action] * count
-                for previous_action, count in counts.items()
-            ) / total
+            usual_aggression = sum(AGGRESSION[previous_action] * count for previous_action, count in counts.items()) / total
 
             # If theyre usually passive but they make aggressive play it adds and if theyre usually aggressive but theyre suddenly passive
-            confidence += HISTORY_ADJUSTMENT * (
-                AGGRESSION[action] - usual_aggression
-            )
+            confidence += HISTORY_ADJUSTMENT * (AGGRESSION[action] - usual_aggression)
 
         confidence = max(0.0, min(1.0, confidence))
         current = self.current[who]
@@ -101,4 +96,3 @@ class SocialBehaviour:
             (current["confidence"] for current in self.current.values()),
             default=0.0,
         )
-
