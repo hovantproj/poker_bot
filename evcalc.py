@@ -614,7 +614,8 @@ def calc_ev(hand: list[str], board: list[str], known_hands=None):
     ev = probabilities*strengths
 
     probabilities_norm = probabilities/np.sum(probabilities)
+    probabilities_norm = probabilities_norm * np.arange(1,11,1)
     
-    return ev
+    return probabilities_norm
 
-# calc_ev(['Jh', 'Qd'], ['Qd', 'Qc', 'Tc'])
+calc_ev(['Jh', 'Qd'], ['Qd', 'Qc', 'Tc'])
