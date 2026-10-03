@@ -4,8 +4,7 @@ from collections import defaultdict
 import re
 import math
 
-#TODO: made a simplification in the probability calculations, where I assume the cards are drawn without replacement
-# TODO: to fix, we need to expand some of the denominators but it probably will cook the computing so this is good enough I think
+# NOTE: some assumptions are made when doing the probabilities (i.e non-pedantic calculations)
 
 # declaring global dicts and lists (for card management)
 card_nums = {
@@ -598,7 +597,8 @@ def calc_ev(hand: list[str], board: list[str], known_hands=None):
     # 'strength' is quantified as the highest rank in the hand if it's made
     probabilities = np.array([royalflush_pr, straightflush_pr, fourok_pr, fullhouse_pr, flush_pr, straight_pr, threeok_pr, twopair_pr, onepair_pr, 1])
     # royal flush strength is infinite so giving it an arbitrary big number
-    strengths = np.array([100, strength_sf, strength_fourok, strength_fh, strength_flush, strength_straight, strength_threeok, strength_tp, strength_op, strength_hc])
+    #TODO: potentially adjust this number 
+    strengths = np.array([50, strength_sf, strength_fourok, strength_fh, strength_flush, strength_straight, strength_threeok, strength_tp, strength_op, strength_hc])
     # EV calculations
     ev = probabilities*strengths
 
