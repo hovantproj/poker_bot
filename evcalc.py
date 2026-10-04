@@ -39,6 +39,22 @@ card_ratings = {
     'K': 12
 }
 
+card_ratings_other = {
+    'A': 13,
+    '2': 1,
+    '3': 2,
+    '4': 3,
+    '5': 4,
+    '6': 5,
+    '7': 6,
+    '8': 7,
+    '9': 8,
+    '10': 9,
+    '11': 10,
+    '12': 11,
+    '13': 12
+}
+
 cards = {
     's': [1,2,3,4,5,6,7,8,9,10,11,12,13],
     'h': [1,2,3,4,5,6,7,8,9,10,11,12,13],
@@ -579,7 +595,7 @@ def calc_ev(hand: list[str], board: list[str], known_hands=None):
 
     fourok_pr, highest_four = calc_fourok(current_cards_str, length)
     if highest_four != 0:
-        strength_fourok = card_ratings[str(highest_four)]
+        strength_fourok = card_ratings_other[str(highest_four)]
     else:
         strength_fourok = highest_four
 
@@ -614,10 +630,15 @@ def calc_ev(hand: list[str], board: list[str], known_hands=None):
     ev = probabilities*strengths
 
     probabilities_norm = probabilities/np.sum(probabilities)
+    ev_norm = ev/np.sum(ev)
 
     weights = [89,55,34,21,13,8,5,3,2,1]
     # quadratic = lambda x: x**2
     # weights = x(np.arange(10, 0, -1))
-    probabilities_norm = probabilities_norm * weights
-    
-    return probabilities_norm
+    ev_weighted = ev_norm * weights
+
+    # print(ev_weighted)
+    # print(sum(ev_weighted))
+    return ev_weighted
+
+calc_ev(['Ah, Td'], ['4h, 5c, 6h'])
