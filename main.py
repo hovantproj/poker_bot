@@ -3,15 +3,17 @@ import evcalc
 
 from social_behaviour import SocialBehaviour
 
-THRESHOLD_RAISE = 2.2
-THRESHOLD_CALL = 2
+THRESHOLD_RAISE = 30
+THRESHOLD_CALL = 25
 
 class pokabot(Bot):
     def __init__(self):
         super().__init__()
         self.social = SocialBehaviour() if SocialBehaviour else None
+        self.first_hand = True
 
     def on_hand_start(self, info):
+        self.first_hand = True
         if self.social and hasattr(self.social, "on_hand_start"):
             self.social.on_hand_start(info)
 
@@ -25,7 +27,11 @@ class pokabot(Bot):
         """
 
         try:
-            result = evcalc.calc_ev(hole, board)
+            if self.first_hand == True:
+                result = evcalc.calc_ev(hole, board, 1)
+                self.first_hand = False
+            else:
+                result = evcalc.calc_ev(hole, board, 2)
 
             if result is None:
                 return 0.0

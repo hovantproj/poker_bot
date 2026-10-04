@@ -632,4 +632,4 @@ def calc_ev(hand: list[str], board: list[str], option):
         print(sum(strength))
         return strength
 
-calc_ev(['3c, 2c'], ['Qc', 'Ac', '5c'], 2)
+calc_ev(['3c, 2c'], ['Qh', 'As', '5d'], 2)
