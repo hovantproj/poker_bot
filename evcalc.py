@@ -606,7 +606,7 @@ def calc_ev(hand: list[str], board: list[str], option):
     strength_straight = highest_straight - 1
 
     threeok_pr, highest_three = calc_threeok(current_cards_str, length)
-    strength_threeok = highest_three - 1
+    strength_threeok = int(highest_three) - 1
     if strength_threeok == 0:
         strength_threeok = 13
 
@@ -632,4 +632,4 @@ def calc_ev(hand: list[str], board: list[str], option):
         print(sum(strength))
         return strength
 
-calc_ev(['3c, 2c'], ['Qc', 'Ac', '5c'], 2)
+calc_ev(['3c, 2c'], ['Qc', 'Ah', '3d'], 2)
