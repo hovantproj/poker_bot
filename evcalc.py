@@ -616,6 +616,8 @@ def calc_ev(hand: list[str], board: list[str], known_hands=None):
     probabilities_norm = probabilities/np.sum(probabilities)
 
     weights = [89,55,34,21,13,8,5,3,2,1]
+    # quadratic = lambda x: x**2
+    # weights = x(np.arange(10, 0, -1))
     probabilities_norm = probabilities_norm * weights
     
     return probabilities_norm
