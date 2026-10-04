@@ -111,7 +111,9 @@ def calc_royalflush(current_cards_str, numCards):
     drawsLeft = 5 - (numCards - 2)
 
     # if we have the royal flush already
-    if highest_count == 5:
+    if highest_suit == 0:
+        return 0
+    elif highest_count == 5:
         return 1
     else:
         # if the number of cards to be revealed is lower than the amount of cards needed to form a royal flush 
@@ -632,13 +634,13 @@ def calc_ev(hand: list[str], board: list[str], known_hands=None):
     probabilities_norm = probabilities/np.sum(probabilities)
     ev_norm = ev/np.sum(ev)
 
-    weights = [89,55,34,21,13,8,5,3,2,1]
-    # quadratic = lambda x: x**2
-    # weights = x(np.arange(10, 0, -1))
+    quadratic = lambda x: x**2
+    weights = quadratic(np.arange(10, 0, -1))
     ev_weighted = ev_norm * weights
 
     # print(ev_weighted)
-    # print(sum(ev_weighted))
+    #print(sum(ev_weighted))
     return ev_weighted
 
-calc_ev(['Ah, Td'], ['4h, 5c, 6h'])
+#calc_ev(['1h, 3d'], ['2c, Td, Kh'])
+#calc_ev(['Ad, 2c'], ['4s, Th, 7d'])
