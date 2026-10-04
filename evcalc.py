@@ -638,9 +638,8 @@ def calc_ev(hand: list[str], board: list[str], known_hands=None):
     weights = quadratic(np.arange(10, 0, -1))
     ev_weighted = ev_norm * weights
 
-    # print(ev_weighted)
-    #print(sum(ev_weighted))
+    #print(ev_weighted)
+    print(sum(ev_weighted))
     return ev_weighted
 
-#calc_ev(['1h, 3d'], ['2c, Td, Kh'])
-#calc_ev(['Ad, 2c'], ['4s, Th, 7d'])
+calc_ev(['7c, As'], ['4h, 7h, 8s'])
