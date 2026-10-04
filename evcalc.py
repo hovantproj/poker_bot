@@ -111,6 +111,8 @@ def calc_royalflush(current_cards_str, numCards):
     drawsLeft = 5 - (numCards - 2)
 
     # if we have the royal flush already
+    if highest_suit == 0:
+        return 0
     if highest_count == 5:
         return 1
     else:
@@ -638,7 +640,7 @@ def calc_ev(hand: list[str], board: list[str], known_hands=None):
     ev_weighted = ev_norm * weights
 
     # print(ev_weighted)
-    # print(sum(ev_weighted))
+    print(sum(ev_weighted))
     return ev_weighted
 
-calc_ev(['Ah, Td'], ['4h, 5c, 6h'])
+calc_ev(['7d, 7c'], [])

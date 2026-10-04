@@ -3,8 +3,8 @@ import evcalc
 
 from social_behaviour import SocialBehaviour
 
-THRESHOLD_RAISE = 10
-THRESHOLD_CALL = 5
+THRESHOLD_RAISE = 2.2
+THRESHOLD_CALL = 2
 
 class pokabot(Bot):
     def __init__(self):
@@ -43,10 +43,7 @@ class pokabot(Bot):
         # Check at every opportunity (coz we passive)
         if state.to_call == 0:
             return state.check()
-
-        # What % of the pot we are
-        pot_odds = state.to_call / (state.pot + state.to_call)
-
+        
         hand_strength = self.get_hand_strength(
             state.hole,
             state.board
