@@ -271,9 +271,11 @@ def calc_fullhouse(current_cards_str, numCards):
             highest = len(match)
             highest_rank = rank
             continue
-        elif len(match) == highest and len(match) > second_highest:
+        elif len(match) == highest and len(match) > second_highest and second_highest != '':
             highest_rank += rank
             continue
+        elif second_highest == '':
+            second_highest = 0
 
         if len(match) > second_highest:
             second_highest = len(match)
@@ -304,6 +306,8 @@ def calc_fullhouse(current_cards_str, numCards):
     pr_2 = pr_highest2*pr_second3
 
     if len(highest_rank) == 2:
+        ranks = highest_rank
+    elif second_highest == 0:
         ranks = highest_rank
     else:
         ranks = highest_rank + second_highest_rank[0]
@@ -586,4 +590,4 @@ def calc_ev(hand: list[str], board: list[str], known_hands=None):
 
     return probabilities
 
-calc_ev(['Ac, As'], ['7d', '3h'])
+calc_ev(['Kc, Ks'], [])
