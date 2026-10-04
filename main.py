@@ -31,14 +31,10 @@ class pokabot(Bot):
             return 0.0
 
         # Sums up each probability
-        category_score = float(sum(result))
-        category_score *= 1.3
+        strength = float(sum(result))
 
-        #  Normalisation
-        strength = (10.0 - category_score) / 9.0
-
-        # Keep result between 0 and 1
-        return max(0.0, min(1.0, strength))
+        # Keep result between 0 and 1 
+        return min(1, strength / 65)
 
     def act(self, state):
         # Check at every opportunity (coz we passive)
@@ -61,7 +57,7 @@ class pokabot(Bot):
             hand_strength *= (1.0 - 0.10 * table_confidence)
 
         # Very strong advantage, we raise
-        if hand_strength > pot_odds + 0.25 and state.can_raise:
+        if hand_strength > pot_odds and state.can_raise:
             return state.raise_to(state.min_raise_to)
 
         # Call
