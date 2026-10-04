@@ -2,11 +2,10 @@ from collections import Counter, defaultdict
 
 SOCIAL_THRESH = 10  # Needs this many past actions before considering
 ACTIONS = {"fold", "check", "call", "raise"}
-RECENT_ACTION_WEIGHT = 0.7 # What percentage of decision should be based on most recent action, other percentage is based on accumulation of previous actions
 HISTORY_ADJUSTMENT = 0.15 # How much it reacts to new unusual actions
 
 # Checking is weak, calling moderate and raising strong
-BASE_CONFIDENCE = {"check": 0.25, "call": 0.45, "raise": 0.65}
+BASE_CONFIDENCE = {"check": 0.25, "call": 0.3, "raise": 0.65}
 AGGRESSION = {"fold": 0.0, "check": 0.0, "call": 0.5, "raise": 1.0}
 
 class SocialBehaviour:
@@ -72,8 +71,6 @@ class SocialBehaviour:
 
         confidence = max(0.0, min(1.0, confidence))
         current = self.current[who]
-        if current["last_action"] is not None:
-            confidence = (RECENT_ACTION_WEIGHT * confidence + (1 - RECENT_ACTION_WEIGHT) * current["confidence"])
 
         current["last_action"] = action
         current["confidence"] = confidence

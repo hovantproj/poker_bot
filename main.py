@@ -32,6 +32,7 @@ class pokabot(Bot):
 
         # Sums up each probability
         category_score = float(sum(result))
+        category_score *= 1.3
 
         #  Normalisation
         strength = (10.0 - category_score) / 9.0
@@ -44,7 +45,7 @@ class pokabot(Bot):
         if state.to_call == 0:
             return state.check()
 
-        # Compare cost and pot odds
+        # What % of the pot we are
         pot_odds = state.to_call / (state.pot + state.to_call)
 
         hand_strength = self.get_hand_strength(
@@ -57,7 +58,7 @@ class pokabot(Bot):
             table_confidence = self.social.get_table_confidence()
 
             # More confident opponents means bad so big penalty
-            hand_strength *= (1.0 - 0.30 * table_confidence)
+            hand_strength *= (1.0 - 0.10 * table_confidence)
 
         # Very strong advantage, we raise
         if hand_strength > pot_odds + 0.25 and state.can_raise:
