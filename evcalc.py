@@ -537,28 +537,6 @@ def calc_highcard(current_cards_str, numCards):
                 
     return strongest_rank
 
-def find_strength(ranks):
-    highest_strength = 0
-
-    if ranks == 10:
-        ranks = 'T'
-    elif ranks == 11:
-        ranks = 'J'
-    elif ranks == 12:
-        ranks = 'Q'
-    elif ranks == 1:
-        ranks = 'A'
-    else:
-        ranks = 'K'
-    ranks = str(ranks)
-
-    for rank in ranks:
-        strength = card_ratings[rank]
-        if strength > highest_strength:
-            highest_strength = strength
-
-    return highest_strength
-
 def calc_ev(hand: list[str], board: list[str], known_hands=None):
     """
     Inputs:
@@ -588,58 +566,24 @@ def calc_ev(hand: list[str], board: list[str], known_hands=None):
     royalflush_pr = calc_royalflush(current_cards_str, length)
 
     straightflush_pr, highest_sf = calc_straightflush(current_cards_num, length)
-    if highest_sf == 1:
-        strength_sf = 13
-    elif highest_sf != 0:
-        strength_sf = highest_sf - 1
-    else:
-        strength_sf = highest_sf
 
     fourok_pr, highest_four = calc_fourok(current_cards_str, length)
-    if highest_four != 0:
-        strength_fourok = card_ratings_other[str(highest_four)]
-    else:
-        strength_fourok = highest_four
 
     fullhouse_pr, ranks_fh = calc_fullhouse(current_cards_str, length)
-    strength_fh = find_strength(ranks_fh)
 
     flush_pr, strength_flush = calc_flush(current_cards_num, length)
 
     straight_pr, highest_straight = calc_straight(current_cards_num, length)
-    if highest_straight != 0:
-        strength_straight = highest_straight - 1
-    else:
-        strength_straight = highest_straight
 
     threeok_pr, highest_three = calc_threeok(current_cards_str, length)
-    strength_threeok = find_strength(highest_three)
 
     twopair_pr, highest_tp = calc_twopair(current_cards_str, length)
-    strength_tp = find_strength(highest_tp)
 
     onepair_pr, highest_op = calc_onepair(current_cards_str, length)
-    strength_op = highest_op
-
-    strength_hc = calc_highcard(current_cards_str, length)
 
     # 'strength' is quantified as the highest rank in the hand if it's made
     probabilities = np.array([royalflush_pr, straightflush_pr, fourok_pr, fullhouse_pr, flush_pr, straight_pr, threeok_pr, twopair_pr, onepair_pr, 1])
-    # royal flush strength is infinite so giving it an arbitrary big number
-    #TODO: potentially adjust this number 
-    strengths = np.array([50, strength_sf, strength_fourok, strength_fh, strength_flush, strength_straight, strength_threeok, strength_tp, strength_op, strength_hc])
-    # EV calculations
-    ev = probabilities*strengths
 
-    probabilities_norm = probabilities/np.sum(probabilities)
-    ev_norm = ev/np.sum(ev)
+    return probabilities
 
-    quadratic = lambda x: x**2
-    weights = quadratic(np.arange(10, 0, -1))
-    ev_weighted = ev_norm * weights
-
-    #print(ev_weighted)
-    print(sum(ev_weighted))
-    return ev_weighted
-
-calc_ev(['7c, As'], ['4h, 7h, 8s'])
+calc_ev(['Ac, As'], ['7d', '3h'])
