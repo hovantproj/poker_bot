@@ -3,6 +3,9 @@ import evcalc
 
 from social_behaviour import SocialBehaviour
 
+THRESHOLD_RAISE = 10
+THRESHOLD_CALL = 5
+
 class pokabot(Bot):
     def __init__(self):
         super().__init__()
@@ -32,9 +35,9 @@ class pokabot(Bot):
 
         # Sums up each probability
         strength = float(sum(result))
+        print(strength)
 
-        # Keep result between 0 and 1 
-        return min(1, strength / 65)
+        return strength
 
     def act(self, state):
         # Check at every opportunity (coz we passive)
@@ -57,11 +60,11 @@ class pokabot(Bot):
             hand_strength *= (1.0 - 0.10 * table_confidence)
 
         # Very strong advantage, we raise
-        if hand_strength > pot_odds and state.can_raise:
+        if hand_strength > THRESHOLD_RAISE and state.can_raise:
             return state.raise_to(state.min_raise_to)
 
         # Call
-        if hand_strength >= pot_odds:
+        if hand_strength >= THRESHOLD_CALL:
             return state.call()
 
         # Otherwise fold
