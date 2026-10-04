@@ -314,9 +314,9 @@ def calc_flush(current_cards_num, numCards):
                 number = int(card[1:])
 
                 if number == 1:
-                    strength == 13
+                    strength = 13
                 else:
-                    strength == (number - 1)
+                    strength = (number - 1)
 
                 if strength > strength_final:
                     strength_final = strength
@@ -495,8 +495,8 @@ def calc_onepair(current_cards_str, numCards):
     numCardsLeft = 52 - numCards - 4*2
     drawsLeft = 5 - (numCards - 2)
 
-    if len(highest_rank) == 2 and strongest_rank in highest_rank:
-        return 1, highest_rank
+    if highest >= 2: # Highest >= 2 as in there are 2 matches
+        return 1, strongest_rank
     else:
         # actually calculating it
         pr_onepair_dry = (1/numCardsLeft)*5*drawsLeft
@@ -617,5 +617,3 @@ def calc_ev(hand: list[str], board: list[str], known_hands=None):
     probabilities_norm = probabilities_norm * np.arange(1,11,1)
     
     return probabilities_norm
-
-calc_ev(['Jh', 'Qd'], ['Qd', 'Qc', 'Tc'])
